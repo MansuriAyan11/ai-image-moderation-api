@@ -4,3 +4,10 @@ __pycache__/
 .env
 uploads/*
 !uploads/.gitkeep
+
+
+# Test images - do not upload to GitHub
+images/
+*.jpeg
+*.jpg
+*.png
