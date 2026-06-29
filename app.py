@@ -5,7 +5,7 @@ import uuid
 import os
 
 from detector import detect_image
-
+from preprocess import detect_with_preprocessing
 
 app = FastAPI(
     title="AI Image Moderation API",
