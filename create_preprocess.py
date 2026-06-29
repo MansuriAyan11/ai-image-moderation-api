@@ -1,4 +1,5 @@
-from PIL import Image
+with open('preprocess.py', 'w', encoding='utf-8') as f:
+    f.write("""from PIL import Image
 from pathlib import Path
 import tempfile
 import os
@@ -121,3 +122,5 @@ def detect_with_preprocessing(image_path: str, detect_fn) -> dict:
         return fallback
 
     return result_original
+""")
+print("preprocess.py created successfully")

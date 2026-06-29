@@ -72,7 +72,7 @@ async def detect(file: UploadFile = File(...)):
                 detail="Uploaded file is empty"
             )
 
-        result = detect_image(str(file_path))
+        result = detect_with_preprocessing(str(file_path), detect_image)
 
         if result["status"] == "safe":
             return {
