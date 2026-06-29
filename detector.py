@@ -24,12 +24,15 @@ UNSAFE_LABELS = {
 # use 0.35 so cropped explicit content is caught. Breast/buttocks stay at 0.45
 # since false positives (bikinis, sports) are more likely at lower thresholds.
 LABEL_THRESHOLDS = {
-    "MALE_GENITALIA_EXPOSED":   0.35,   # highest priority — never miss
-    "MALE_GENITALIA_COVERED":   0.40,   # added label — slightly more lenient
-    "FEMALE_GENITALIA_EXPOSED": 0.35,   # highest priority
+
+    "MALE_GENITALIA_EXPOSED":   0.25,   # highest priority - never miss
+    "MALE_GENITALIA_COVERED":   0.40,   # added label - slightly more lenient
+    "FEMALE_GENITALIA_EXPOSED": 0.25,   # highest priority
     "ANUS_EXPOSED":             0.35,   # highest priority
     "FEMALE_BREAST_EXPOSED":    0.45,   # medium priority
     "BUTTOCKS_EXPOSED":         0.45,   # medium priority
+
+   
 }
 
 # Default fallback for any label not in the map above

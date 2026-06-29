@@ -57,22 +57,44 @@ def merge_detections(result_original: dict, result_padded: dict) -> dict:
 
 
 def apply_fallback_rules(detections: list, is_closeup_image: bool):
-    if not is_closeup_image:
-        return None
     labels_found = {item.get("class") for item in detections}
     scores = {item.get("class"): item.get("score", 0) for item in detections}
+
     has_belly = "BELLY_EXPOSED" in labels_found
-    has_face = any(l in labels_found for l in ["FACE_FEMALE", "FACE_MALE"])
+    has_face_male = "FACE_MALE" in labels_found
+    has_face_female = "FACE_FEMALE" in labels_found
+    has_face = has_face_male or has_face_female
+
+    safe_labels = {
+        "MALE_GENITALIA_COVERED",
+        "FEMALE_GENITALIA_COVERED",
+        "MALE_BREAST_COVERED",
+        "FEMALE_BREAST_COVERED"
+    }
+    has_safe_context = bool(labels_found & safe_labels)
+
     belly_score = scores.get("BELLY_EXPOSED", 0)
-    if has_belly and not has_face and belly_score >= 0.65:
-        print("[FALLBACK] Rule triggered: close-up belly with no face")
-        print("[FALLBACK] BELLY_EXPOSED score: " + str(belly_score))
+    face_male_score = scores.get("FACE_MALE", 0)
+
+    if is_closeup_image and has_belly and not has_face and belly_score >= 0.65:
+        print("[FALLBACK] Rule 1: close-up belly with no face")
         return {
             "status": "unsafe",
             "confidence": round(belly_score, 4),
             "detected_labels": ["MALE_GENITALIA_COVERED_INFERRED"],
             "processing_time": 0.0
         }
+
+    if has_face and has_belly and not has_safe_context and belly_score >= 0.30:
+        print("[FALLBACK] Rule 2: face + belly + no clothing context")
+        print("[FALLBACK] BELLY_EXPOSED score: " + str(round(belly_score, 4)))
+        return {
+            "status": "unsafe",
+            "confidence": round(belly_score, 4),
+            "detected_labels": ["MALE_GENITALIA_EXPOSED_INFERRED"],
+            "processing_time": 0.0
+        }
+
     return None
 
 
@@ -83,6 +105,13 @@ def detect_with_preprocessing(image_path: str, detect_fn) -> dict:
         return result_original
 
     closeup = is_closeup(image_path)
+
+    try:
+        from nudenet import NudeDetector
+        _d = NudeDetector()
+        raw_detections = _d.detect(image_path)
+    except Exception:
+        raw_detections = []
 
     if closeup:
         print("[PREPROCESS] Close-up detected - running padded version too")
@@ -107,18 +136,12 @@ def detect_with_preprocessing(image_path: str, detect_fn) -> dict:
                 except Exception:
                     pass
 
-    try:
-        from nudenet import NudeDetector
-        detector = NudeDetector()
-        raw_detections = detector.detect(image_path)
-    except Exception:
-        raw_detections = []
-
     fallback = apply_fallback_rules(raw_detections, closeup)
     if fallback:
         fallback["processing_time"] = round(
             result_original.get("processing_time", 0) + fallback["processing_time"], 4
         )
+        print("[FALLBACK] Returning unsafe result to API")
         return fallback
 
     return result_original
